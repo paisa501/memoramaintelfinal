@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es" style="orientation: portrait;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego de Memorama</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      background-image: url('fondo.jpg'); /* Agregar imagen de fondo */
+      background-size: cover;
+    }
+    #memorama {
+      display: grid;
+      grid-template-columns: repeat(4, 85px); /* Reducir el ancho de las cartas */
+      grid-template-rows: repeat(5, 85px); /* Reducir el alto de las cartas */
+      grid-gap: 5px; /* Reducir el espacio entre cartas */
+      border: 1px solid #000; /* Borde delgado */
+      padding: 5px; /* Espaciado interno */
+      background-color: rgba(255, 255, 255, 0.5); /* Fondo blanco semi-transparente para mejor legibilidad */
+    }
+    .card {
+      width: 85px; /* Reducir el ancho de las cartas */
+      height: 85px; /* Reducir el alto de las cartas */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px; /* Reducir el tamaño del texto de las cartas */
+      cursor: pointer;
+      user-select: none; /* Evitar que el texto sea seleccionable */
+      background-color: #87CEEB; /* Fondo azul cielo cuando la carta está tapada */
+      position: relative;
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Ajustar la imagen para cubrir completamente el contenedor */
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .card img.hidden {
+      visibility: hidden; /* Ocultar la imagen "congrats.jpg" por defecto */
+    }
+    .flipped img.hidden {
+      visibility: visible; /* Mostrar la imagen "congrats.jpg" cuando la carta está destapada */
+    }
+    .flipped img:not(.hidden) {
+      visibility: hidden; /* Ocultar la imagen original cuando la carta está destapada */
+    }
+    #startButton {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 5.6px 5.6px; /* Reducir el tamaño del botón en un 30% */
+      border: 2px solid #aaa;
+      border-radius: 5px;
+      background-color: #eee;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra gris */
+    }
+    #timerContainer {
+      margin-top: 15px; /* Reducir el margen superior del contenedor del tiempo */
+      font-size: 30px; /* Aumentar el tamaño de fuente del contenedor del tiempo */
+      color: #fff; /* Cambiar el color del texto a blanco */
+      font-family: 'Intel Clear', sans-serif; /* Utilizar una fuente similar a "Intel Clear" */
+      text-align: center; /* Centrar el texto */
+    }
+    #result {
+      display: none;
+      margin-top: 20px;
+      font-size: 36px; /* Aumentar el tamaño de fuente del resultado */
+      font-weight: bold;
+      color: #fff; /* Cambiar el color del texto a blanco */
+      position: absolute; /* Ajustar posición */
+      top: 50%; /* Alinear verticalmente en la mitad de la pantalla */
+      left: 50%; /* Alinear horizontalmente en la mitad de la pantalla */
+      transform: translate(-50%, -50%); /* Centrar exactamente */
+      text-align: center; /* Centrar texto */
+    }
+    #tryAgainButton {
+      margin-top: 20px;
+      font-size: 25px; /* Aumentar el tamaño de fuente del botón de intentar de nuevo */
+      cursor: pointer;
+      color: #fff; /* Cambiar el color del texto a blanco */
+      background-color: #87cefa; /* Cambiar el color de fondo a azul celeste */
+      border: none; /* Quitar borde */
+      border-radius: 5px; /* Agregar bordes redondeados */
+      padding: 6px 14px; /* Ajustar el tamaño del botón en un 35% */
+      position: absolute; /* Ajustar posición */
+      bottom: 20px; /* Colocar el botón en la parte inferior */
+      left: 50%; /* Alinear horizontalmente en la mitad de la pantalla */
+      transform: translateX(-50%); /* Centrar horizontalmente */
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999; /* Asegura que esté por encima de otros elementos */
+    }
+    #overlay img {
+      max-width: 90%; /* Reducir la anchura máxima de la imagen */
+      max-height: 70%; /* Reducir la altura máxima de la imagen */
+    }
+    #continueButton {
+      margin-top: 10px; /* Reducir el margen superior */
+      font-size: 24px; /* Aumentar el tamaño de la fuente del botón de continuar */
+      cursor: pointer;
+      padding: 10px 20px; /* Aumentar el padding del botón */
+      border: 2px solid #aaa;
+      border-radius: 5px;
+      background-color: #eee;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra gris */
+      position: absolute;
+      bottom: 20px; /* Colocar el botón en la parte inferior */
+    }
+    #memoramaButton {
+      font-size: 22.05px; /* Ajustar el tamaño de fuente del botón en un 30% */
+      padding: 31.85px 8.82px; /* Ajustar el tamaño del botón en un 30% */
+      border: none;
+      cursor: pointer;
+      background: url('boton.jpg') no-repeat center center;
+      background-size: cover;
+      color: transparent;
+    }
+    #seconds {
+      font-size: inherit;
+      color: inherit;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <button id="memoramaButton">Memorama Intel</button>
+  <div id="overlay" style="display: none;">
+    <img src="specs.jpg" alt="Imagen de inicio"> <!-- Reducir el tamaño de la imagen -->
+    <button id="continueButton">Continuar</button>
+  </div>
+  <button id="startButton" style="display: none;">Iniciar Juego</button>
+  <div id="timerContainer">
+    <div id="timer"></div>
+    <span id="seconds"></span>
+  </div>
+  <div id="memorama" style="display: none;"></div>
+  <div id="result"></div>
+  <button id="tryAgainButton" style="display: none;">Intentar de nuevo</button>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const memorama = document.getElementById('memorama');
+      const startButton = document.getElementById('startButton');
+      const tryAgainButton = document.getElementById('tryAgainButton');
+      const timerDiv = document.getElementById('timer');
+      const secondsSpan = document.getElementById('seconds');
+      const resultDiv = document.getElementById('result');
+      const overlay = document.getElementById('overlay');
+      const continueButton = document.getElementById('continueButton');
+      const memoramaButton = document.getElementById('memoramaButton');
+      const symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']; // Se agregan cuatro parejas adicionales
+      let cards = [];
+      let flippedCards = [];
+      let lockBoard = false;
+      let pairsFound = 0;
+      let timerSeconds = 30; // Cambiar el tiempo a 30 segundos
+      let timerInterval;
+
+      function createBoard() {
+        for (let i = 0; i < cards.length; i++) {
+          const card = document.createElement('div');
+          card.classList.add('card');
+          card.dataset.symbol = cards[i];
+
+          const imgHidden = document.createElement('img');
+          imgHidden.src = `${cards[i]}.jpg`;
+          imgHidden.classList.add('hidden');
+
+          const imgOriginal = document.createElement('img');
+          imgOriginal.src = 'congrats.jpg';
+
+          card.appendChild(imgHidden);
+          card.appendChild(imgOriginal);
+          card.addEventListener('click', flipCard);
+
+          memorama.appendChild(card);
+        }
+      }
+
+      function startGame() {
+        overlay.style.display = 'none';
+        memoramaButton.style.display = 'none'; // Ocultar el botón de Memorama Intel
+        startButton.style.display = 'none';
+        tryAgainButton.style.display = 'none'; // Ocultar el botón de intentar de nuevo
+        memorama.style.display = 'grid';
+        resultDiv.style.display = 'none';
+        timerDiv.textContent = `Tiempo restante:`;
+        secondsSpan.textContent = `${timerSeconds}`; // Mostrar los segundos
+        timerDiv.style.display = 'block'; // Mostrar el temporizador
+        secondsSpan.style.display = 'inline'; // Mostrar los segundos
+
+        cards = symbols.concat(symbols).sort(() => Math.random() - 0.5);
+        createBoard();
+
+        timerInterval = setInterval(() => {
+          timerSeconds--;
+          timerDiv.textContent = `Tiempo restante:`;
+          secondsSpan.textContent = `${timerSeconds}`; // Actualizar los segundos
+
+          if (timerSeconds === 0) {
+            clearInterval(timerInterval);
+            hideGame();
+          }
+        }, 1000);
+      }
+
+      function hideGame() {
+        memorama.style.display = 'none';
+        resultDiv.textContent = `¡Juego terminado! Encontraste ${pairsFound} parejas.`;
+        resultDiv.style.display = 'block';
+        tryAgainButton.style.display = 'block'; // Mostrar el botón de intentar de nuevo
+        timerDiv.style.display = 'none'; // Ocultar el temporizador
+        secondsSpan.style.display = 'none'; // Ocultar los segundos
+      }
+
+      function flipCard() {
+        if (lockBoard || flippedCards.length === 2 || this.classList.contains('flipped')) {
+          return;
+        }
+
+        this.classList.add('flipped');
+        flippedCards.push(this);
+
+        if (flippedCards.length === 2) {
+          checkMatch();
+        }
+      }
+
+      function checkMatch() {
+        const [firstCard, secondCard] = flippedCards;
+
+        if (firstCard.dataset.symbol === secondCard.dataset.symbol) {
+          disableCards();
+        } else {
+          unflipCards();
+        }
+      }
+
+      function disableCards() {
+        flippedCards.forEach(card => {
+          card.removeEventListener('click', flipCard);
+        });
+
+        flippedCards = [];
+        pairsFound++;
+
+        if (pairsFound === symbols.length) {
+          clearInterval(timerInterval);
+          hideGame();
+        }
+      }
+
+      function unflipCards() {
+        lockBoard = true;
+
+        setTimeout(() => {
+          flippedCards.forEach(card => {
+            card.classList.remove('flipped');
+          });
+
+          flippedCards = [];
+          lockBoard = false;
+        }, 1000);
+      }
+
+      function tryAgain() {
+        location.reload(); // Recargar la página para reiniciar el juego
+      }
+
+      continueButton.addEventListener('click', startGame);
+      memoramaButton.addEventListener('click', function() {
+        overlay.style.display = 'flex';
+      });
+      startButton.addEventListener('click', startGame);
+      tryAgainButton.addEventListener('click', tryAgain);
+    });
+  </script>
+</body>
+</html>
